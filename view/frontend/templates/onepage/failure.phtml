@@ -1,0 +1,45 @@
+<?php
+/**
+ * @author MageRocket
+ * @copyright Copyright (c) 2024 MageRocket (https://magerocket.com/)
+ * @link https://magerocket.com/
+ */
+
+/** @var $block Failure */
+use MageRocket\GoCuotas\Block\Onepage\Failure;
+$order = $block->getOrder();
+?>
+<?php if ($block->isPaymentMethodGoCuotas()): ?>
+    <div class="gocuotas-payment-information">
+        <div id="go-logo">
+            <img src="<?=$block->getLogo();?>" alt="Go Cuotas">
+        </div>
+        <h2><strong><?=__("Transaction rejected.");?></strong></h2>
+        <?php if ($error = $block->getErrorMessage()):?>
+            <p><strong><?=$error?></strong></p>
+        <?php else: ?>
+            <p><?=__("There was an error processing your payment. Don't worry, no charge was made to your card.");?></p>
+        <?php endif ?>
+        <a class="btn-goCuotas"
+           href="<?=$block->getUrl('gocuotas/order/retry', ['order_id' => $order->getId()]);?>">
+            <span><?=__('Retry payment');?></span>
+        </a>
+    </div>
+<?php else: ?>
+    <?php if ($block->getRealOrderId()):?>
+        <?php $order = $block->getOrderData();?>
+        <p><?=__('Order #') . $block->getRealOrderId();?></p>
+    <?php endif ?>
+
+    <?php if ($error = $block->getErrorMessage()):?>
+        <p><strong><?=$error;?></strong></p>
+    <?php endif ?>
+
+    <p>
+        <?=
+            __(
+                'Click <a href="%1">here</a> to continue shopping.',
+                $block->escapeUrl($block->getContinueShoppingUrl())
+            );?>
+    </p>
+<?php endif ?>
