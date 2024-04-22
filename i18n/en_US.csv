@@ -95,3 +95,6 @@
 "Payment Status: <b>%1</b>","Payment Status: <b>%1</b>"
 "Installments: <b>%1</b>","Installments: <b>%1</b>"
 "Waiting time exceeded. Please try again.","Waiting time exceeded. Please try again."
+"<b class='donotchange'>IMPORTANT</b>: On mobile devices, <b>Modal</b> mode will behave like <b>Redirect</b> mode.","<b class='donotchange'>IMPORTANT</b>: On mobile devices, <b>Modal</b> mode will behave like <b>Redirect</b> mode."
+"Go Cuotas: Secret has been regenerated.","Go Cuotas: Secret has been regenerated."
+"Go Cuotas: Error regenerating the secret. Please try again.","Go Cuotas: Error regenerating the secret. Please try again."

@@ -95,3 +95,6 @@ Go Cuotas,Go Cuotas
 "Payment Status: <b>%1</b>","Estado del Pago: <b>%1</b>"
 "Installments: <b>%1</b>","Cuotas: <b>%1</b>"
 "Waiting time exceeded. Please try again.","Tiempo de espera superado. Por favor, reintente el pago."
+"<b class='donotchange'>IMPORTANT</b>: On mobile devices, <b>Modal</b> mode will behave like <b>Redirect</b> mode.","<b class='donotchange'>IMPORTANTE</b>: En dispositivos móviles, el modo <b>Modal</b> se comportará como <b>Redirect</b>."
+"Go Cuotas: Secret has been regenerated.","Go Cuotas: Secret regenerado exitosamente."
+"Go Cuotas: Error regenerating the secret. Please try again.","Go Cuotas: Se produjo un error al regenerar el Secret. Intente nuevamente"

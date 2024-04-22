@@ -128,7 +128,8 @@ define([
                     return false;
                 }
                 // Modal or Redirect?
-                if(self.getPaymentMode()){
+                // Force Redirect Mode on Mobile / Tablet
+                if (self.getPaymentMode() && !self.detectDevice()) {
                     // Modal
                     self.createModal(response);
                 } else {
@@ -179,6 +180,20 @@ define([
             setTimeout(function() {
                 window.location.href = goCuotas_cancel + 'timeout/t';
             }, paymentTimeOutMinutes * 60 * 1000);
+        },
+
+        /**
+         * Detect Device
+         * @returns {boolean}
+         */
+        detectDevice: function () {
+            var screenWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            var breakpoints = {
+                desktop: 1024,
+                tablet: 768,
+                mobile: 0
+            };
+            return screenWidth < breakpoints.desktop;
         }
     });
 });
