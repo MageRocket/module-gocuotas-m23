@@ -45,7 +45,7 @@
         <arguments>
             <argument name="code" xsi:type="const">MageRocket\GoCuotas\Model\ConfigProvider::CODE</argument>
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
-            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\Info</argument>
+            <argument name="infoBlockType" xsi:type="string">MageRocket\GoCuotas\Block\Info</argument>
             <argument name="valueHandlerPool" xsi:type="object">GoCuotasValueHandlerPool</argument>
             <argument name="validatorPool" xsi:type="object">GoCuotasValidatorPool</argument>
             <argument name="commandPool" xsi:type="object">GoCuotasCommandPool</argument>

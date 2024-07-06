@@ -27,6 +27,12 @@ $paymentAdditionalInformation = $payment->getAdditionalInformation() ?: [];
             <?php if (isset($paymentAdditionalInformation['installments'])): ?>
                 <p><?=__('Installments: <b>%1</b>', $paymentAdditionalInformation['installments']);?></p>
             <?php endif;?>
+            <?php if (isset($paymentAdditionalInformation['card_number'])): ?>
+                <p><?=__('Card Number: <b>%1</b>', $paymentAdditionalInformation['card_number']);?></p>
+            <?php endif;?>
+            <?php if (isset($paymentAdditionalInformation['card_name'])): ?>
+                <p><?=__('Card Number: <b>%1</b>', $paymentAdditionalInformation['card_name']);?></p>
+            <?php endif;?>
         </div>
     </div>
 <?php endif ?>
