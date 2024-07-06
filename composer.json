@@ -32,7 +32,6 @@
     }
   },
   "extra": {
-    "user_guide": "https://docs.magerocket.com/guides/go-cuotas",
-    "dev": true
+    "user_guide": "https://docs.magerocket.com/guides/go-cuotas"
   }
 }
