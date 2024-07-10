@@ -31,7 +31,7 @@ $paymentAdditionalInformation = $payment->getAdditionalInformation() ?: [];
                 <p><?=__('Card Number: <b>%1</b>', $paymentAdditionalInformation['card_number']);?></p>
             <?php endif;?>
             <?php if (isset($paymentAdditionalInformation['card_name'])): ?>
-                <p><?=__('Card Number: <b>%1</b>', $paymentAdditionalInformation['card_name']);?></p>
+                <p><?=__('Card Name: <b>%1</b>', $paymentAdditionalInformation['card_name']);?></p>
             <?php endif;?>
         </div>
     </div>
