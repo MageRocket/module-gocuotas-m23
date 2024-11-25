@@ -1,11 +1,10 @@
 {
   "name": "magerocket/module-gocuotas-m23",
-  "version": "1.0.3",
-  "description": "Module Go Cuotas Payment for Magento 2 (2.3.3/2.3.6 php 7.3)",
+  "version": "1.0.4",
+  "description": "Module Go Cuotas Payment for Magento 2 (2.3.x)",
   "homepage": "https://magerocket.com/gocuotas",
   "type": "magento2-module",
   "require": {
-    "php": "<7.4",
     "magerocket/module-core-m23": "^1.0",
     "guzzlehttp/guzzle": "^6.0 || ^7.0"
   },

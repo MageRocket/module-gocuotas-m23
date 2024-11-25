@@ -38,10 +38,18 @@ use Magento\Sales\Model\Order\Email\Sender\InvoiceSenderFactory;
 class GoCuotas
 {
     protected const GOCUOTAS_PAYMENT_APPROVED = 'approved';
-
     protected const GOCUOTAS_PAYMENT_CANCELED = 'denied';
-
     protected const GOCUOTAS_PAYMENT_PENDING = 'undefined';
+    protected const GOCUOTAS_PAYMENT_COMMENT = [
+        "external_reference" => "Payment External Reference: <b>#%1</b><br>",
+        "method" => "Payment Method: <b>%1</b><br>",
+        "status" => "Payment Status: <b>%1</b><br>",
+        "reason" => "Reason: <b>%1</b><br>",
+        "card_number" => "Card Number: <b>%1</b><br>",
+        "card_name" => "Card Name: <b>%1</b><br>",
+        "installments" => "Installments: <b>%1</b><br>",
+        "id" => "Payment ID: <b>%1</b><br>"
+    ];
 
     /**
      * @var Webservice $webservice
@@ -205,18 +213,19 @@ class GoCuotas
      * Create Transaction
      *
      * @param Order $order
-     * @return false|mixed|string
+     * @param bool $forceRedirect
+     * @return bool|string
      * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    public function createTransaction($order)
+    public function createTransaction(Order $order, bool $forceRedirect = false)
     {
         $storeId = $order->getStoreId();
         $accessToken = $this->getAccessToken($storeId);
         if ($accessToken === null) {
             throw new Exception(__("An error occurred while validating/generating token"));
         }
-        $paymentData = $this->prepareOrderData($order);
+        $paymentData = $this->prepareOrderData($order, $forceRedirect);
         $requestData = [];
         $requestData['headers'] = [
             "Content-Type" => "application/json",
@@ -284,6 +293,53 @@ class GoCuotas
         // Log Debug
         $this->helper->logDebug('Create Refund Payload: ' . $this->serializeData($requestData));
         $this->helper->logDebug('Create Refund Response: ' . $this->serializeData($responseBody ?? []));
+        return $responseBody;
+    }
+
+    /**
+     * Search Orders GoCuotas
+     *
+     * @param null $storeId
+     * @param null $dateStart
+     * @param null $dateEnd
+     * @return array
+     * @throws Exception
+     */
+    public function searchOrders($storeId = null, $dateStart = null, $dateEnd = null):array
+    {
+        $accessToken = $this->getAccessToken($storeId);
+        if ($accessToken === null) {
+            throw new Exception(__("An error occurred while validating/generating token"));
+        }
+
+        $requestData = [];
+        $requestData['headers'] = [
+            "Content-Type" => "application/json",
+            "Authorization" => "Bearer $accessToken",
+        ];
+
+        // Refund Data
+        $dateStart = $dateStart ?? $this->timezone->date()->format('Y-m-d H:i');
+        $dateEnd = $dateEnd ?? $this->dateTime->date('Y-m-d H:i',
+            strtotime($dateStart . " +" . Data::GOCUOTAS_PAYMENT_EXPIRATION . " minutes")
+        );
+
+        $endpoint = sprintf(Endpoints::GET_ORDERS, $dateStart, $dateEnd);
+        $createPaymentEndpoint = $this->helper->buildRequestURL($endpoint, $storeId);
+        $goCuotasPreference = $this->webservice->doRequest($createPaymentEndpoint, $requestData, "GET");
+        $responseBody = $this->unserializeData($goCuotasPreference->getBody()->getContents());
+        if ($goCuotasPreference->getStatusCode() > 201) {
+            $this->helper->log("Search Orders Payload: " . $this->serializeData($requestData));
+            $this->helper->log("Search Orders Response: " . $this->serializeData($responseBody));
+            throw new Exception(
+                __("An error occurred while searching orders"),
+                $goCuotasPreference->getStatusCode()
+            );
+        }
+
+        // Log Debug
+        $this->helper->logDebug('Search Orders Payload: ' . $this->serializeData($requestData));
+        $this->helper->logDebug('Search Orders Response: ' . $this->serializeData($responseBody ?? []));
         return $responseBody;
     }
 
@@ -450,6 +506,7 @@ class GoCuotas
     {
         try {
             if ($order->canCancel()) {
+                $this->setPaymentInformation($order, $additionalData);
                 $additionalData = is_array($additionalData) ?
                     $this->getAdditionalInformationFormatted($additionalData) : $additionalData;
                 $order->cancel();
@@ -538,49 +595,25 @@ class GoCuotas
             $additionalInformation['method'] = $additionalInformation['method'] ?? $this->helper->getPaymentMode();
             if ($additionalInformation['method'] !== 'redirect' &&
                 $additionalInformation["status"] !== 'cancel') {
-                /**
-                 * Modal / Webhook
-                 */
-                $historyFormatted .= __(
-                    "Payment ID: <b>%1</b><br>",
-                    $additionalInformation["id"] ?? 'N/A'
-                );
-                $historyFormatted .= __(
-                    "Installments: <b>%1</b><br>",
-                    $additionalInformation["installments"] ?? 'N/A'
-                );
                 // Set Modal Method
                 $additionalInformation["method"] = "Modal";
             }
+
             // Log Cancel by User
             if ($additionalInformation["status"] === 'cancel') {
-                $historyFormatted .= __(
-                    "<b>Payment Canceled by Customer</b><br>"
-                );
+                $historyFormatted .= __("<b>Payment Canceled by Customer</b><br>");
             }
-            $historyFormatted .= __(
-                "Payment External Reference: <b>#%1</b><br>",
-                $additionalInformation["external_reference"] ?? 'N/A'
-            );
-            $historyFormatted .= __(
-                "Payment Method: <b>%1</b><br>",
-                ucfirst($additionalInformation["method"]) ?? 'N/A'
-            );
-            $historyFormatted .= __(
-                "Payment Status: <b>%1</b><br>",
-                ucfirst($additionalInformation["status"]) ?? 'N/A'
-            );
-            $historyFormatted .= __(
-                "Card Number: <b>%1</b><br>",
-                ucfirst($additionalInformation["card_number"]) ?? 'N/A'
-            );
-            $historyFormatted .= __(
-                "Card Name: <b>%1</b><br>",
-                ucfirst($additionalInformation["card_name"]) ?? 'N/A'
-            );
+
+            // Iterate through fields array and append to historyFormatted if set
+            foreach (self::GOCUOTAS_PAYMENT_COMMENT as $key => $label) {
+                if (isset($additionalInformation[$key])) {
+                    $historyFormatted .= __($label, ucfirst($additionalInformation[$key]));
+                }
+            }
         } else {
             $historyFormatted .= __("Unknown Payment Information");
         }
+
         return $historyFormatted;
     }
 
@@ -601,7 +634,7 @@ class GoCuotas
             if ($tokenData->getId()) {
                 try {
                     $this->tokenRepositoryInterface->delete($tokenData);
-                    $this->helper->log("Go Cuotas Expired Token:" . $tokenData->getToken());
+                    $this->helper->log("Go Cuotas Expired Token:" . $this->helper->maskSensitiveData($tokenData->getToken()));
                 } catch (\Exception $e) {
                     $this->helper->log("Go Cuotas Expired Token - ERROR:" . $e->getMessage());
                 }
@@ -689,14 +722,14 @@ class GoCuotas
      * Prepare Order Data
      *
      * @param Order $order
+     * @param bool $forceRedirect
      * @return array
-     * @throws LocalizedException
      * @throws NoSuchEntityException
      */
-    private function prepareOrderData(Order $order)
+    private function prepareOrderData(Order $order, bool $forceRedirect = false)
     {
         $paymentMode = $this->helper->getPaymentMode($order->getStoreId());
-        if ($paymentMode) {
+        if ($paymentMode && !$forceRedirect) {
             // Modal
             $successURL = Data::GOCUOTAS_MODAL_ENDPOINT . Endpoints::MODAL_SUCCESS;
             $failureURL = Data::GOCUOTAS_MODAL_ENDPOINT . Endpoints::MODAL_FAILURE;
@@ -752,12 +785,17 @@ class GoCuotas
      * Get Go Cuotas Transaction
      *
      * @param Order $order
-     * @param string $transactionId
+     * @param $transactionId
      * @return bool|string
      * @throws Exception
      */
-    public function getGoCuotasTransaction(Order $order, string $transactionId)
+    public function getGoCuotasTransaction(Order $order, $transactionId)
     {
+        // Canceled Order
+        if(!$transactionId) {
+            return ['status' => 'canceled'];
+        }
+
         $storeId = $order->getStoreId();
         $accessToken = $this->getAccessToken($storeId);
         if ($accessToken === null) {
@@ -797,6 +835,25 @@ class GoCuotas
      */
     private function serializeData($data)
     {
+        // Remove Sensible Data
+        if(isset($data['email'])){
+            $data['email'] = $this->helper->maskSensitiveData($data['email'],5,5);
+        }
+        if(isset($data['password'])){
+            $data['password'] = $this->helper->maskSensitiveData($data['password']);
+        }
+        if(isset($data['headers']['Authorization'])){
+            $data['headers']['Authorization'] = $this->helper->maskSensitiveData($data['headers']['Authorization'],1,10);
+        }
+        if(isset($data['token'])){
+            $data['token'] = $this->helper->maskSensitiveData($data['token'],1,10);
+        }
+        if(isset($data['form_params']['email'])){
+            $data['form_params']['email'] = $this->helper->maskSensitiveData($data['form_params']['email'],5,5);
+        }
+        if(isset($data['form_params']['password'])){
+            $data['form_params']['password'] = $this->helper->maskSensitiveData($data['form_params']['password'],5,5);
+        }
         return $this->jsonSerializer->serialize($data);
     }
 

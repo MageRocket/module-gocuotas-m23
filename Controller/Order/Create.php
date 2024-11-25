@@ -16,6 +16,7 @@ use MageRocket\GoCuotas\Model\GoCuotas;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\ActionInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
+use Magento\Framework\App\RequestInterface;
 
 class Create implements ActionInterface
 {
@@ -40,6 +41,11 @@ class Create implements ActionInterface
     protected $jsonFactory;
 
     /**
+     * @var RequestInterface $request
+     */
+    protected $request;
+
+    /**
      * Init Construct
      *
      * @param Data $helper
@@ -51,10 +57,12 @@ class Create implements ActionInterface
         Data $helper,
         Session $session,
         GoCuotas $goCuotas,
-        JsonFactory $jsonFactory
+        JsonFactory $jsonFactory,
+        RequestInterface $request
     ) {
         $this->helper = $helper;
         $this->session = $session;
+        $this->request = $request;
         $this->goCuotas = $goCuotas;
         $this->jsonFactory = $jsonFactory;
     }
@@ -67,11 +75,12 @@ class Create implements ActionInterface
      */
     public function execute()
     {
+        $forceRedirect = $this->request->getParam('forceRedirect') !== null;
         $order = $this->session->getLastRealOrder();
         $url = $this->helper->getCallBackUrl();
         $paymentJson = ['error' => true, 'failure_url' => $url];
         try {
-            $response = $this->goCuotas->createTransaction($order);
+            $response = $this->goCuotas->createTransaction($order, $forceRedirect);
             $this->goCuotas->saveTransaction($order);
             $url = $this->replaceURL($response['url_init']);
             // Generate Token Cancel
